@@ -1,4 +1,4 @@
-name: Mirror to GitLab
+name: Sync to GitLab
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     - cron: "0 3 * * 0"   # every Sunday 03:00 UTC
 
 jobs:
-  mirror:
+  sync:
     runs-on: ubuntu-latest
 
     steps:
@@ -15,7 +15,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Mirror repository
+      - name: Push to GitLab
         run: |
           git remote add gitlab https://${{ secrets.GITLAB_USERNAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_PATH }}
-          git push --mirror gitlab
+          git push gitlab --all
+          git push gitlab --tags
