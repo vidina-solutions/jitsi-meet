@@ -8,6 +8,7 @@ import { IConfig } from '../../react/features/base/config/configType';
 import { urlObjectToString } from '../../react/features/base/util/uri';
 import BreakoutRooms from '../pageobjects/BreakoutRooms';
 import ChatPanel from '../pageobjects/ChatPanel';
+import FileSharingPanel from '../pageobjects/FileSharingPanel';
 import Filmstrip from '../pageobjects/Filmstrip';
 import IframeAPI from '../pageobjects/IframeAPI';
 import InviteDialog from '../pageobjects/InviteDialog';
@@ -25,6 +26,7 @@ import SecurityDialog from '../pageobjects/SecurityDialog';
 import SettingsDialog from '../pageobjects/SettingsDialog';
 import Toolbar from '../pageobjects/Toolbar';
 import VideoQualityDialog from '../pageobjects/VideoQualityDialog';
+import VirtualBackgroundDialog from '../pageobjects/VirtualBackgroundDialog';
 import Visitors from '../pageobjects/Visitors';
 
 import { LOG_PREFIX, logInfo } from './browserLogger';
@@ -258,6 +260,13 @@ export class Participant {
         await this.driver.url(url);
 
         await this.waitForPageToLoad();
+
+        // If the URL changed, wait for the new page to load before proceeding.
+        const currentUrl = await this.driver.getUrl();
+
+        if (!currentUrl.includes(url)) {
+            await this.waitForPageToLoad();
+        }
 
         if (this._iFrameApi) {
             await this.switchToIFrame();
@@ -535,6 +544,13 @@ export class Participant {
     }
 
     /**
+     * Returns the file sharing panel for this participant.
+     */
+    getFileSharingPanel(): FileSharingPanel {
+        return new FileSharingPanel(this);
+    }
+
+    /**
      * Returns the BreakoutRooms for this participant.
      *
      * @returns {BreakoutRooms}
@@ -627,6 +643,13 @@ export class Participant {
      */
     getPasswordDialog(): PasswordDialog {
         return new PasswordDialog(this);
+    }
+
+    /**
+     * Returns the virtual background dialog.
+     */
+    getVirtualBackgroundDialog(): VirtualBackgroundDialog {
+        return new VirtualBackgroundDialog(this);
     }
 
     /**

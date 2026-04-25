@@ -1,5 +1,3 @@
-import { sanitizeUrl as _sanitizePath } from '@braintree/sanitize-url';
-
 import { CONFERENCE_JOIN_IN_PROGRESS } from '../base/conference/actionTypes';
 import { getCurrentConference } from '../base/conference/functions';
 import MiddlewareRegistry from '../base/redux/MiddlewareRegistry';
@@ -27,22 +25,30 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
 
         conference.addCommandListener(ETHERPAD_COMMAND,
             ({ value }: { value: string; }) => {
+                if (!value) {
+                    return;
+                }
+
                 let url;
                 const { etherpad_base: etherpadBase } = getState()['features/base/config'];
                 const etherpadBaseUrl = sanitizeUrl(etherpadBase);
 
-                try {
-                    new URL(_sanitizePath(value));
-
-                    logger.warn(`Received suspicious value for etherpad command: ${value}`);
-
-                    return;
-                } catch (e) {
-                    // we should receive a relative path for the URL and should not be able to construct a url from it
-                }
-
                 if (etherpadBaseUrl) {
-                    const urlObj = new URL(value, etherpadBaseUrl.toString());
+                    let urlObj;
+
+                    try {
+                        urlObj = new URL(value, etherpadBaseUrl.toString());
+                    } catch (e) {
+                        logger.warn(`Etherpad command: failed to construct URL from value: ${value}`);
+
+                        return;
+                    }
+
+                    if (urlObj.origin !== etherpadBaseUrl.origin) {
+                        logger.warn(`Etherpad command value resolved to unexpected origin: ${urlObj.origin}`);
+
+                        return;
+                    }
 
                     // Merge query string parameters on top of internal ones
                     if (etherpadBaseUrl.search) {
@@ -57,6 +63,11 @@ MiddlewareRegistry.register(({ dispatch, getState }) => next => action => {
                 }
 
                 dispatch(setDocumentUrl(url));
+
+                if (typeof APP !== 'undefined') {
+                    logger.log('Etherpad is enabled');
+                    APP.UI.initEtherpad();
+                }
             }
         );
         break;
